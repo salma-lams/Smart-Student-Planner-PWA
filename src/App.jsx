@@ -6,19 +6,23 @@ import Dashboard from './pages/Dashboard';
 import Tasks from './pages/Tasks';
 import Timer from './pages/Timer';
 import Settings from './pages/Settings';
+import Stats from './pages/Stats';
 
 export default function App() {
   return (
     <ThemeProvider>
       <TaskProvider>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="tasks" element={<Tasks />} />
-            <Route path="timer" element={<Timer />} />
-            <Route path="settings" element={<Settings />} />
-          </Route>
-        </Routes>
+        
+          <Routes>
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="tasks" element={<Tasks />} />
+              <Route path="timer" element={<Timer />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="stats" element={<Stats />} />
+            </Route>
+          </Routes>
+        
       </TaskProvider>
     </ThemeProvider>
   );

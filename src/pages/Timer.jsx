@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Play, Pause, RotateCcw, Coffee, Brain } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useTasks } from '../context/TaskContext';
 
 const MODES = {
   FOCUS: { mode: 'focus', minutes: 25, label: 'Focus Time', icon: Brain, color: 'text-primary' },
@@ -8,6 +9,7 @@ const MODES = {
 };
 
 export default function Timer() {
+  const { addSession } = useTasks();
   const [currentMode, setCurrentMode] = useState(MODES.FOCUS);
   const [timeLeft, setTimeLeft] = useState(MODES.FOCUS.minutes * 60);
   const [isRunning, setIsRunning] = useState(false);
@@ -20,6 +22,11 @@ export default function Timer() {
       }, 1000);
     } else if (timeLeft === 0) {
       setIsRunning(false);
+      
+      if (currentMode.mode === 'focus') {
+        addSession({ duration: currentMode.minutes });
+      }
+
       if ('Notification' in window && Notification.permission === 'granted') {
         new Notification(`${currentMode.label} Finished!`, {
           body: currentMode.mode === 'focus' ? 'Time for a break.' : 'Time to focus again.',
@@ -28,7 +35,7 @@ export default function Timer() {
       }
     }
     return () => clearInterval(interval);
-  }, [isRunning, timeLeft, currentMode.label, currentMode.mode]);
+  }, [isRunning, timeLeft, currentMode.label, currentMode.mode, currentMode.minutes, addSession]);
 
   const toggleTimer = () => {
     if (!isRunning && 'Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {

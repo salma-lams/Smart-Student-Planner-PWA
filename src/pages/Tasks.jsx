@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useTasks } from '../context/TaskContext';
-import { Plus, Trash2, Edit2, CheckCircle2, Circle, Calendar, Tag, X, ListTodo } from 'lucide-react';
+import { Plus, Trash2, Edit2, CheckCircle2, Circle, Calendar, Tag, X, ListTodo, AlertTriangle, ChevronDown } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { cn } from '../lib/utils';
+import { getSubjectIcon, PRIORITY_COLORS } from '../lib/constants';
 
 export default function Tasks() {
   const { tasks, addTask, updateTask, deleteTask, toggleTaskStatus } = useTasks();
@@ -13,6 +14,7 @@ export default function Tasks() {
   const [title, setTitle] = useState('');
   const [subject, setSubject] = useState('');
   const [deadline, setDeadline] = useState('');
+  const [priority, setPriority] = useState('medium');
 
   const openModal = (task = null) => {
     if (task) {
@@ -20,11 +22,13 @@ export default function Tasks() {
       setTitle(task.title);
       setSubject(task.subject);
       setDeadline(task.deadline);
+      setPriority(task.priority || 'medium');
     } else {
       setEditingTask(null);
       setTitle('');
       setSubject('');
       setDeadline(new Date().toISOString().split('T')[0]); // today as default
+      setPriority('medium');
     }
     setIsModalOpen(true);
   };
@@ -39,9 +43,9 @@ export default function Tasks() {
     if (!title.trim() || !subject.trim() || !deadline) return;
 
     if (editingTask) {
-      updateTask(editingTask.id, { title, subject, deadline });
+      updateTask(editingTask.id, { title, subject, deadline, priority });
     } else {
-      addTask({ title, subject, deadline });
+      addTask({ title, subject, deadline, priority });
     }
     closeModal();
   };
@@ -95,15 +99,23 @@ export default function Tasks() {
               </button>
               
               <div className="flex-1 min-w-0 pt-0.5">
-                <h3 className={cn(
-                  "font-bold text-foreground mb-1.5 truncate text-sm sm:text-base transition-colors",
-                  task.status === 'completed' && "line-through text-foreground/60"
-                )}>
-                  {task.title}
-                </h3>
-                <div className="flex flex-wrap items-center gap-2 text-xs text-foreground/70 font-semibold">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className={cn(
+                    "font-bold text-foreground truncate text-sm sm:text-base transition-colors",
+                    task.status === 'completed' && "line-through text-foreground/60"
+                  )}>
+                    {task.title}
+                  </h3>
+                  {task.priority === 'high' && (
+                    <AlertTriangle className="w-3.5 h-3.5 text-red-500 fill-red-500/20" />
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-2 text-[10px] sm:text-xs text-foreground/70 font-semibold">
                   <span className="flex items-center gap-1 bg-secondary text-secondary-foreground px-2 py-0.5 rounded-md">
-                    <Tag className="w-3 h-3" />
+                    {(() => {
+                      const Icon = getSubjectIcon(task.subject);
+                      return <Icon className="w-3 h-3" />;
+                    })()}
                     {task.subject}
                   </span>
                   <span className={cn(
@@ -112,6 +124,12 @@ export default function Tasks() {
                   )}>
                     <Calendar className="w-3 h-3" />
                     {task.deadline ? format(parseISO(task.deadline), 'MMM d') : 'No date'}
+                  </span>
+                  <span className={cn(
+                    "px-2 py-0.5 rounded-md border uppercase tracking-wider text-[9px] font-black",
+                    PRIORITY_COLORS[task.priority || 'medium']
+                  )}>
+                    {task.priority || 'medium'}
                   </span>
                 </div>
               </div>
@@ -180,6 +198,27 @@ export default function Tasks() {
                   onChange={e => setDeadline(e.target.value)}
                   className="w-full bg-secondary text-foreground border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary outline-none transition-shadow font-medium"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-foreground/60 uppercase tracking-wider mb-1.5 ml-1">Priority</label>
+                <div className="flex gap-2">
+                  {['low', 'medium', 'high'].map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setPriority(p)}
+                      className={cn(
+                        "flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider border transition-all",
+                        priority === p 
+                          ? PRIORITY_COLORS[p] + " border-current scale-105" 
+                          : "bg-secondary text-foreground/40 border-transparent hover:bg-secondary/80"
+                      )}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
               </div>
               
               <button 
