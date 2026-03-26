@@ -42,6 +42,7 @@ export function TaskProvider({ children }) {
       createdAt: new Date().toISOString(),
       status: 'pending',
       priority: 'medium', // low, medium, high
+      subtasks: [], // { id, title, completed }
       ...taskData,
     };
     setTasks(prev => [newTask, ...prev]);
@@ -62,8 +63,23 @@ export function TaskProvider({ children }) {
         return { 
           ...t, 
           status: isCompleting ? 'completed' : 'pending',
-          completedAt: isCompleting ? new Date().toISOString() : null
+          completedAt: isCompleting ? new Date().toISOString() : null,
+          // If completing main task, optionally complete all subtasks
+          subtasks: t.subtasks?.map(st => ({ ...st, completed: isCompleting })) || []
         };
+      }
+      return t;
+    }));
+  };
+
+  const toggleSubtaskStatus = (taskId, subtaskId) => {
+    setTasks(prev => prev.map(t => {
+      if (t.id === taskId) {
+        const updatedSubtasks = t.subtasks.map(st => 
+          st.id === subtaskId ? { ...st, completed: !st.completed } : st
+        );
+        // If all subtasks completed, maybe don't auto-complete main task but stay pending for user
+        return { ...t, subtasks: updatedSubtasks };
       }
       return t;
     }));
