@@ -8,18 +8,25 @@ const TaskContext = createContext();
 export function TaskProvider({ children }) {
   const [tasks, setTasks] = useState([]);
   const [sessions, setSessions] = useState([]); // Array of { id, duration, completedAt, taskId? }
+  const [notificationSettings, setNotificationSettings] = useState({
+    enabled: false,
+    timer: true,
+    tasks: true
+  });
   const [loading, setLoading] = useState(true);
 
   // Initialize from storage
   useEffect(() => {
     async function loadData() {
       try {
-        const [storedTasks, storedSessions] = await Promise.all([
+        const [storedTasks, storedSessions, storedNotificationSettings] = await Promise.all([
           localforage.getItem('student-planner-tasks'),
-          localforage.getItem('student-planner-sessions')
+          localforage.getItem('student-planner-sessions'),
+          localforage.getItem('student-planner-notification-settings')
         ]);
         if (storedTasks) setTasks(storedTasks);
         if (storedSessions) setSessions(storedSessions);
+        if (storedNotificationSettings) setNotificationSettings(storedNotificationSettings);
       } catch (err) {
         console.error("Failed to load data:", err);
       } finally {
@@ -34,8 +41,37 @@ export function TaskProvider({ children }) {
     if (!loading) {
       localforage.setItem('student-planner-tasks', tasks).catch(console.error);
       localforage.setItem('student-planner-sessions', sessions).catch(console.error);
+      localforage.setItem('student-planner-notification-settings', notificationSettings).catch(console.error);
     }
-  }, [tasks, sessions, loading]);
+  }, [tasks, sessions, notificationSettings, loading]);
+
+  // Periodic check for due tasks
+  useEffect(() => {
+    if (loading || !notificationSettings.enabled || !notificationSettings.tasks) return;
+
+    const checkDueTasks = () => {
+      const now = new Date();
+      const inOneHour = new Date(now.getTime() + 60 * 60 * 1000);
+
+      tasks.forEach(task => {
+        if (task.status === 'pending' && task.deadline) {
+          const deadline = parseISO(task.deadline);
+          // Simple check: if deadline is within the next hour and hasn't been notified yet
+          if (deadline > now && deadline < inOneHour && !task.notified) {
+            new Notification("Task Due Soon!", {
+              body: `${task.title} is due at ${format(deadline, 'HH:mm')}`,
+              icon: '/pwa-192x192.png'
+            });
+            // Mark as notified so we don't spam
+            updateTask(task.id, { notified: true });
+          }
+        }
+      });
+    };
+
+    const interval = setInterval(checkDueTasks, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, [tasks, notificationSettings, loading]);
 
   const addTask = (taskData) => {
     const newTask = {
@@ -157,7 +193,9 @@ export function TaskProvider({ children }) {
       toggleTaskStatus,
       addSession,
       getStats,
-      getWeeklyCompletionStats
+      getWeeklyCompletionStats,
+      notificationSettings,
+      setNotificationSettings
     }}>
       {children}
     </TaskContext.Provider>

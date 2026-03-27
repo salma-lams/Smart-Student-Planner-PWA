@@ -9,7 +9,7 @@ const MODES = {
 };
 
 export default function Timer() {
-  const { addSession } = useTasks();
+  const { addSession, notificationSettings } = useTasks();
   const [currentMode, setCurrentMode] = useState(MODES.FOCUS);
   const [timeLeft, setTimeLeft] = useState(MODES.FOCUS.minutes * 60);
   const [isRunning, setIsRunning] = useState(false);
@@ -27,7 +27,7 @@ export default function Timer() {
         addSession({ duration: currentMode.minutes });
       }
 
-      if ('Notification' in window && Notification.permission === 'granted') {
+      if (notificationSettings.enabled && notificationSettings.timer && 'Notification' in window && Notification.permission === 'granted') {
         new Notification(`${currentMode.label} Finished!`, {
           body: currentMode.mode === 'focus' ? 'Time for a break.' : 'Time to focus again.',
           icon: '/pwa-192x192.png'
@@ -35,7 +35,7 @@ export default function Timer() {
       }
     }
     return () => clearInterval(interval);
-  }, [isRunning, timeLeft, currentMode.label, currentMode.mode, currentMode.minutes, addSession]);
+  }, [isRunning, timeLeft, currentMode.label, currentMode.mode, currentMode.minutes, addSession, notificationSettings]);
 
   const toggleTimer = () => {
     if (!isRunning && 'Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
