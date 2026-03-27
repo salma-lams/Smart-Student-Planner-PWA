@@ -1,6 +1,8 @@
 import { useTheme } from '../context/ThemeContext';
-import { Moon, Sun, Monitor, Bell, Trash2, Github, Smartphone } from 'lucide-react';
+import { useTasks } from '../context/TaskContext';
+import { Moon, Sun, Monitor, Bell, Trash2, Github, Calendar as CalendarIcon } from 'lucide-react';
 import localforage from 'localforage';
+import { cn } from '../lib/utils';
 
 export default function Settings() {
   const { notificationSettings, setNotificationSettings } = useTasks();
