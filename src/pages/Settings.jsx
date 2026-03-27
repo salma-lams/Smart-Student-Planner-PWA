@@ -5,6 +5,7 @@ import localforage from 'localforage';
 import { cn } from '../lib/utils';
 
 export default function Settings() {
+  const { theme, toggleTheme } = useTheme();
   const { notificationSettings, setNotificationSettings } = useTasks();
 
   const handleClearData = async () => {
